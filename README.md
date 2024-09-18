@@ -1,5 +1,3 @@
-# Metrics
+# Python Sveltekit Starter 2024
 
-This is how rainsound.ai tracks its key metrics.
-
-See the backend and frontend Readme for info on how to run the app.
+This is a starter template for how rainsound.ai builds python/sveltekit apps in 2024.

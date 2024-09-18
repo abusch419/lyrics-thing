@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "metrics"
+name = "python-sveltekit-starter-2024"
 version = "0.1.0"
 description = ""
 authors = ["rainsound.ai <hello@rainsound.ai>"]

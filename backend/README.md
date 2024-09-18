@@ -1,6 +1,6 @@
-# Metrics Backend
+# Backend
 
-This is the FastAPI backend for our Metrics app.
+This is the FastAPI backend for our starter app.
 
 ## Development
 
