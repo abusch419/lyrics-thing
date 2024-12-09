@@ -25,6 +25,17 @@ if environment == "dev":
         allow_methods=["*"],
         allow_headers=["*"],
     )
+else:
+    # Production CORS settings
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "https://lyrics-frontend.onrender.com"
+        ],  # Update with your frontend URL
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 app.include_router(api_router, prefix=prefix)
 

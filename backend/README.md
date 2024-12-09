@@ -1,6 +1,6 @@
 # Backend
 
-This is the FastAPI backend for our starter app.
+This is the FastAPI backend for lyrics thing
 
 ## Development
 

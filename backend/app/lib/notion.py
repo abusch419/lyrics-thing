@@ -132,6 +132,7 @@ def get_all_lyrics_with_metadata() -> List[Dict]:
         response = notion.databases.query(database_id=notion_database_id)
         processed_songs = []
 
+        logger.info("Loading songs from database:")
         for page in response["results"]:
             # Get lyrics
             lyrics_property = (
@@ -159,6 +160,7 @@ def get_all_lyrics_with_metadata() -> List[Dict]:
             processed_songs.append(
                 {"title": title, "lyrics": lyrics, "moods": moods, "themes": themes}
             )
+            logger.info(f"  - '{title}' (Moods: {moods}, Themes: {themes})")
 
         return processed_songs
 
@@ -171,22 +173,78 @@ def generate_lyrics(prompt: str) -> Dict[str, str]:
     """Generate lyrics based on user input and existing song database"""
     try:
         # Get all existing songs for context
-        songs = get_all_lyrics_with_metadata()
+        all_songs = get_all_lyrics_with_metadata()
+        logger.info(f"\nFound {len(all_songs)} total songs in database")
+        logger.info(f"Processing prompt: '{prompt}'")
 
-        # Create a context message that includes all songs
-        context = {"existing_songs": songs, "user_request": prompt}
+        # Extract mood and theme keywords from the prompt
+        prompt_lower = prompt.lower()
+
+        # Filter songs based on matching moods and themes
+        relevant_songs = []
+        logger.info("\nMatching songs:")
+        for song in all_songs:
+            # Check if any of the song's moods or themes appear in the prompt
+            matching_moods = [
+                mood for mood in song["moods"] if mood.lower() in prompt_lower
+            ]
+            matching_themes = [
+                theme for theme in song["themes"] if theme.lower() in prompt_lower
+            ]
+
+            if matching_moods or matching_themes:
+                relevant_songs.append(song)
+                logger.info(
+                    f"  ✓ '{song['title']}'"
+                    f"\n    Matching moods: {matching_moods if matching_moods else 'none'}"
+                    f"\n    Matching themes: {matching_themes if matching_themes else 'none'}"
+                )
+
+        if not relevant_songs:
+            logger.info(
+                "\nNo songs matched the prompt directly, using all songs as reference:"
+            )
+            for song in all_songs:
+                logger.info(f"  - '{song['title']}'")
+        else:
+            logger.info(
+                f"\nFound {len(relevant_songs)} relevant songs based on "
+                f"mood/theme matching from prompt"
+            )
+
+        # If no matches found, use all songs but mention this in the context
+        context = {
+            "existing_songs": relevant_songs if relevant_songs else all_songs,
+            "user_request": prompt,
+            "matching_style": bool(relevant_songs),
+            "available_moods": list(
+                set(mood for song in all_songs for mood in song["moods"])
+            ),
+            "available_themes": list(
+                set(theme for song in all_songs for theme in song["themes"])
+            ),
+        }
+
+        logger.info(f"Available moods: {context['available_moods']}")
+        logger.info(f"Available themes: {context['available_themes']}")
 
         system_message = (
             "You are a lyric writing assistant. You have access to a database of existing "
-            "songs with their moods and themes. Analyze the style, themes, and moods of "
-            "the existing songs, and use that to inform how you generate new lyrics. "
-            "When writing new lyrics, try to maintain consistency with the artistic voice "
-            "shown in the existing songs while incorporating the user's specific requests. "
+            "songs with their moods and themes. If the user's request matches specific moods "
+            "or themes, you'll receive only the matching songs to better capture that style. "
+            "Analyze the style, themes, and moods of the existing songs, and use that to inform "
+            "how you generate new lyrics. When writing new lyrics, try to maintain consistency "
+            "with the artistic voice shown in the existing songs while incorporating the "
+            "user's specific requests. "
             "IMPORTANT: Use \\n for newlines in the lyrics. Return your response in this format: "
             '{"lyrics": "Line 1\\nLine 2\\nLine 3", '
             '"explanation": "Single line explanation", '
             '"suggested_moods": ["mood1", "mood2"], '
             '"suggested_themes": ["theme1", "theme2"]}'
+        )
+
+        logger.info(
+            f"Using {len(context['existing_songs'])} relevant songs for generation"
         )
 
         response = openai.chat.completions.create(

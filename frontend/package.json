@@ -15,7 +15,8 @@
 		"test:unit": "vitest",
 		"generateApiTypes": "npm run generateJsonSchema && npm run convertJsonSchema",
 		"generateJsonSchema": "cd ../backend && python main.py --save-json-schemas && cd -",
-		"convertJsonSchema": "json2ts --input ./src/lib/ApiTypes.json --output ./src/lib/ApiTypes.ts"
+		"convertJsonSchema": "json2ts --input ./src/lib/ApiTypes.json --output ./src/lib/ApiTypes.ts",
+		"start": "node build"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.28.1",

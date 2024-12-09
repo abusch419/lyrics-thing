@@ -1,12 +1,12 @@
-import { dev } from "$app/environment";
+import { dev } from '$app/environment';
 
 export function root(): string {
-  return "/";
+	return '/';
 }
 
 export function apiRoot(): string {
-  if (dev) {
-    return "http://localhost:8000/api";
-  }
-  return "/api";
+	if (dev) {
+		return 'http://localhost:8000/api';
+	}
+	return 'https://lyrics-backend.onrender.com/api';
 }

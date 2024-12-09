@@ -6,7 +6,7 @@ Then when you're ready to run these commands make sure to run them in a window u
 
 # Deal Sourcing Demo Frontend
 
-This is our SvelteKit frontend we're building as part of our Metric app. 
+This is our SvelteKit frontend we're building as part of lyrics thing
 
 ## Development
 

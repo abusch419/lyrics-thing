@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: lyrics-backend
+    env: python
+    buildCommand: cd backend && pip install poetry && poetry install
+    startCommand: cd backend && poetry run python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENVIRONMENT
+        value: production
+      - key: SLACK_INTEGRATION_SECRET
+        sync: false
+      - key: NOTION_API_KEY
+        sync: false
+      - key: NOTION_DATABASE_ID
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+
+  - type: web
+    name: lyrics-frontend
+    env: node
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && node build
+    envVars:
+      - key: ORIGIN
+        value: https://lyrics-frontend.onrender.com
