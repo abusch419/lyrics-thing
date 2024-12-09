@@ -9,7 +9,7 @@ export default {
 			},
 			colors: {
 				demo: {
-					50: 'hsl(207.56, 45%, 90%)', // Lighter and less saturated
+					50: 'hsl(207.56, 45%, 90%)',
 					100: 'hsl(207.56, 53%, 50%)',
 					300: 'hsl(207.56, 57%, 37%)',
 					400: 'hsl(207.56, 100%, 26.47%)'
