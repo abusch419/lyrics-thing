@@ -9,11 +9,7 @@ from app.lib import JsonSchemas
 
 app = FastAPI()
 
-# We want this service's endpoints to be available from /api.
-#
-# In production, Digital Ocean handles that for us. In development,
-# we add the prefix ourselves.
-prefix = ""
+prefix = ""  # Keep this as empty string for production
 if environment == "dev":
     prefix = "/api"
     logger = logging.getLogger("uvicorn")
@@ -26,12 +22,12 @@ if environment == "dev":
         allow_headers=["*"],
     )
 else:
-    # Production CORS settings
+    # Production CORS settings - update with your actual frontend URL
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
-            "https://lyrics-frontend.onrender.com"
-        ],  # Update with your frontend URL
+            "https://lyrics-frontend.onrender.com"  # Match your actual frontend URL
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
