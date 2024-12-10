@@ -9,9 +9,10 @@ from app.lib import JsonSchemas
 
 app = FastAPI()
 
-prefix = ""  # Keep this as empty string for production
+# Always use /api prefix in both dev and prod
+prefix = "/api"
+
 if environment == "dev":
-    prefix = "/api"
     logger = logging.getLogger("uvicorn")
     logger.warning("Running in development mode - allowing CORS for all origins")
     app.add_middleware(
@@ -22,12 +23,9 @@ if environment == "dev":
         allow_headers=["*"],
     )
 else:
-    # Production CORS settings - update with your actual frontend URL
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[
-            "https://lyrics-frontend.onrender.com"  # Match your actual frontend URL
-        ],
+        allow_origins=["https://lyrics-frontend.onrender.com"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
