@@ -212,39 +212,82 @@ def generate_lyrics(prompt: str) -> Dict[str, str]:
                 f"mood/theme matching from prompt"
             )
 
-        # If no matches found, use all songs but mention this in the context
+        # Modify the context structure to clearly separate reference lyrics
         context = {
-            "existing_songs": relevant_songs if relevant_songs else all_songs,
-            "user_request": prompt,
-            "matching_style": bool(relevant_songs),
-            "available_moods": list(
-                set(mood for song in all_songs for mood in song["moods"])
-            ),
-            "available_themes": list(
-                set(theme for song in all_songs for theme in song["themes"])
-            ),
+            "training_data": {  # Explicitly mark this as the do-not-copy section
+                "songs": [
+                    {
+                        "title": song["title"],
+                        "lyrics": song[
+                            "lyrics"
+                        ],  # These are the lyrics to NEVER copy from
+                        "moods": song["moods"],
+                        "themes": song["themes"],
+                    }
+                    for song in (relevant_songs if relevant_songs else all_songs)
+                ]
+            },
+            "request": {
+                "prompt": prompt,
+                "available_moods": list(
+                    set(mood for song in all_songs for mood in song["moods"])
+                ),
+                "available_themes": list(
+                    set(theme for song in all_songs for theme in song["themes"])
+                ),
+            },
         }
 
-        logger.info(f"Available moods: {context['available_moods']}")
-        logger.info(f"Available themes: {context['available_themes']}")
-
         system_message = (
-            "You are a lyric writing assistant. You have access to a database of existing "
-            "songs with their moods and themes. If the user's request matches specific moods "
-            "or themes, you'll receive only the matching songs to better capture that style. "
-            "Analyze the style, themes, and moods of the existing songs, and use that to inform "
-            "how you generate new lyrics. When writing new lyrics, try to maintain consistency "
-            "with the artistic voice shown in the existing songs while incorporating the "
-            "user's specific requests. "
-            "IMPORTANT: Use \\n for newlines in the lyrics. Return your response in this format: "
-            '{"lyrics": "Line 1\\nLine 2\\nLine 3", '
-            '"explanation": "Single line explanation", '
-            '"suggested_moods": ["mood1", "mood2"], '
-            '"suggested_themes": ["theme1", "theme2"]}'
+            "You are a lyric writing assistant tasked with creating COMPLETELY ORIGINAL lyrics that capture the artist's essence without copying. "
+            "You will receive a context object with two main sections:\n"
+            "1. training_data.songs[]: An array of reference songs containing lyrics that must NEVER be copied\n"
+            "2. request: The user's prompt and available moods/themes\n\n"
+            "When analyzing the training_data songs, pay special attention to: \n"
+            "1. Structural patterns: Verse length, chorus patterns, line length consistency\n"
+            "2. Literary devices: Frequency and type of metaphors, similes, alliteration\n"
+            "3. Vocabulary choices: Level of formality, slang usage, recurring themes\n"
+            "4. Rhyme schemes: Internal rhymes, end rhymes, assonance patterns\n"
+            "5. Emotional tone: How emotions are conveyed - directly stated or implied\n"
+            "6. Narrative perspective: First person, third person, or shifting perspectives\n\n"
+            "STRICT ORIGINALITY RULES:\n"
+            "- The lyrics in training_data.songs[] are OFF LIMITS - never copy any phrases or lines from them\n"
+            "- If addressing similar themes, use completely different metaphors and imagery\n"
+            "- Avoid the specific word combinations found in training_data.songs[]\n"
+            "- Create fresh metaphors while maintaining the artist's level of metaphorical complexity\n"
+            "- If you find yourself wanting to reuse a phrase, force yourself to express that idea differently\n"
+            "- Think of the training data as a style guide, not a phrase bank\n\n"
+            "BEFORE RETURNING LYRICS:\n"
+            "- Double-check every line against training_data.songs[] to ensure no accidental copying\n"
+            "- Verify each metaphor and image is original\n"
+            "- Ensure you're capturing the style without copying the content\n\n"
+            "RESPONSE FORMAT:\n"
+            "You must respond with a valid JSON object containing EXACTLY these four fields:\n"
+            "1. lyrics: String with \\n for line breaks\n"
+            "2. explanation: String explaining how the lyrics mirror the style\n"
+            "3. suggested_moods: Array of 2-3 mood strings\n"
+            "4. suggested_themes: Array of 2-3 theme strings\n\n"
+            "EXAMPLE RESPONSE 1:\n"
+            "{\n"
+            '  "lyrics": "Verse 1:\\nIn the depths of the night\\nA fiery fight begins\\nFlames and shadows dance\\nA primal sight within\\n\\n'
+            "Chorus:\\nOh mama, the fire unfurls so wide\\nOh mama, the shadows thicken inside\\nWe shift beneath the earth\\nRoots deep and wide\\n\\n"
+            "Verse 2:\\nA river's rage awakens\\nIts waters rise and flow\\nCleansing and setting us free\\nAs night descends below\",\n"
+            '  "explanation": "These lyrics mirror the artist\'s style through metaphorical complexity and narrative perspective while using fresh imagery",\n'
+            '  "suggested_moods": ["introspective", "hopeful"],\n'
+            '  "suggested_themes": ["growth", "change"]\n'
+            "}\n\n"
+            "EXAMPLE RESPONSE 2:\n"
+            "{\n"
+            '  "lyrics": "Opening line\\nSecond line of song\\nThird line here\\nFourth line closes",\n'
+            '  "explanation": "Maintained the artist\'s preference for internal rhymes and emotional directness while using original metaphors",\n'
+            '  "suggested_moods": ["energetic", "determined", "bold"],\n'
+            '  "suggested_themes": ["adventure", "discovery"]\n'
+            "}\n\n"
+            "YOUR RESPONSE MUST MATCH THIS FORMAT EXACTLY."
         )
 
         logger.info(
-            f"Using {len(context['existing_songs'])} relevant songs for generation"
+            f"Using {len(context['training_data']['songs'])} relevant songs for generation"
         )
 
         response = openai.chat.completions.create(
@@ -258,20 +301,64 @@ def generate_lyrics(prompt: str) -> Dict[str, str]:
 
         if response.choices and response.choices[0].message.content:
             content = response.choices[0].message.content
-            # Clean up the response: replace actual newlines with spaces in the JSON
-            # but preserve \n literals
-            content = content.replace(
-                "\\n", "__NEWLINE__"
-            )  # temporarily replace \n literals
-            content = content.replace("\n", " ")  # replace actual newlines with spaces
-            content = content.replace("__NEWLINE__", "\\n")  # restore \n literals
+            logger.info("Raw response from OpenAI:")
+            logger.info(content)
 
+            # More robust response cleaning
             try:
-                return json.loads(content)
+                # 1. First preserve intended newlines
+                content = content.replace("\\n", "__NEWLINE__")
+
+                # 2. Clean up any actual JSON-breaking newlines
+                content = content.replace("\n", " ")
+                content = content.replace("\r", " ")
+
+                # 3. Restore intended newlines
+                content = content.replace("__NEWLINE__", "\\n")
+
+                # 4. Handle potential quote issues
+                content = content.replace('\\"', '"')  # Fix double escaped quotes
+                content = content.replace('"', '"')  # Fix smart quotes
+                content = content.replace('"', '"')  # Fix smart quotes
+
+                # 5. Try to extract JSON if it's wrapped in markdown or other text
+                if not content.startswith("{"):
+                    # Look for the first { and last }
+                    start = content.find("{")
+                    end = content.rfind("}") + 1
+                    if start != -1 and end != 0:
+                        content = content[start:end]
+
+                logger.info("Cleaned response:")
+                logger.info(content)
+
+                parsed_response = json.loads(content)
+
+                # Validate required fields
+                required_fields = [
+                    "lyrics",
+                    "explanation",
+                    "suggested_moods",
+                    "suggested_themes",
+                ]
+                missing_fields = [
+                    field for field in required_fields if field not in parsed_response
+                ]
+                if missing_fields:
+                    raise ValueError(
+                        f"Response missing required fields: {missing_fields}"
+                    )
+
+                return parsed_response
+
             except json.JSONDecodeError as e:
                 logger.error(f"JSON parsing error: {str(e)}")
-                logger.error(f"Raw content: {content}")
-                raise ValueError("Failed to parse OpenAI response as JSON")
+                logger.error(f"Failed content: {content}")
+                raise ValueError(f"Failed to parse OpenAI response as JSON: {str(e)}")
+            except Exception as e:
+                logger.error(f"Error processing response: {str(e)}")
+                logger.error(f"Problematic content: {content}")
+                raise
         else:
             raise ValueError("Empty response from OpenAI")
 

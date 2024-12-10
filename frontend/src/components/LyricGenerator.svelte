@@ -77,8 +77,23 @@
 			class="mt-8 rounded-xl backdrop-blur-sm bg-black/30 p-6 border border-white/10 hover:border-cyan-500/30 transition-all duration-500"
 		>
 			<h3 class="text-xl font-medium mb-4 text-cyan-300">Generated Lyrics</h3>
-			<pre
-				class="whitespace-pre-wrap font-mono text-sm text-white/90 bg-black/30 rounded-lg p-4 border border-white/10">{generatedLyrics.lyrics}</pre>
+			<div
+				class="whitespace-pre-wrap font-mono text-sm text-white/90 bg-black/30 rounded-lg p-4 border border-white/10"
+			>
+				{#each generatedLyrics.lyrics.split('\n') as line}
+					{#if line.trim().toLowerCase().startsWith('verse') || line
+							.trim()
+							.toLowerCase()
+							.startsWith('chorus') || line.trim().toLowerCase().startsWith('bridge') || line
+							.trim()
+							.toLowerCase()
+							.startsWith('outro')}
+						<div class="mt-6 mb-2 text-cyan-400 font-bold">{line}</div>
+					{:else}
+						<div>{line}</div>
+					{/if}
+				{/each}
+			</div>
 
 			<div class="mt-6">
 				<h4 class="font-medium text-purple-300 mb-2">AI's Thoughts</h4>
