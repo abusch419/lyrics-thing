@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { GeneratedLyrics } from '$lib/types';
+	import { apiRoot } from '$lib/Urls.shared';
 
 	let prompt = '';
 	let loading = false;
@@ -13,7 +14,7 @@
 		error = null;
 
 		try {
-			const response = await fetch('/api/generate-lyrics', {
+			const response = await fetch(`${apiRoot()}/generate-lyrics`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
