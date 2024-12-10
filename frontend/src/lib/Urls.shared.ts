@@ -8,5 +8,5 @@ export function apiRoot(): string {
 	if (dev) {
 		return 'http://localhost:8000/api';
 	}
-	return 'https://lyrics-backend-3u4c.onrender.com';
+	return 'https://lyrics-backend-3u4c.onrender.com/api';
 }
