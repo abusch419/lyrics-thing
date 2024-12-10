@@ -9,8 +9,6 @@ services:
         value: 3.12.0
       - key: ENVIRONMENT
         value: production
-      - key: SLACK_INTEGRATION_SECRET
-        sync: false
       - key: NOTION_API_KEY
         sync: false
       - key: NOTION_DATABASE_ID
